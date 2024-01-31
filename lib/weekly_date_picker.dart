@@ -1,6 +1,7 @@
 library weekly_date_picker;
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:week_of_year/week_of_year.dart';
 import "package:weekly_date_picker/datetime_apis.dart";
 
@@ -22,6 +23,9 @@ class WeeklyDatePicker extends StatefulWidget {
     this.weeknumberColor = const Color(0xFFB2F5FE),
     this.weeknumberTextColor = const Color(0xFF000000),
     this.daysInWeek = 7,
+    this.changeWeek,
+    this.showLabelMonth = false,
+    this.formatMonth = 'yyyy-MM-dd'
   })  : assert(weekdays.length == daysInWeek,
             "weekdays must be of length $daysInWeek"),
         super(key: key);
@@ -31,6 +35,9 @@ class WeeklyDatePicker extends StatefulWidget {
 
   /// Callback function with the new selected date
   final Function(DateTime) changeDay;
+
+  /// Callback function with the new week date
+  final Function(List<DateTime>)? changeWeek;
 
   /// Specifies the weekday text: default is 'Week'
   final String weekdayText;
@@ -68,6 +75,10 @@ class WeeklyDatePicker extends StatefulWidget {
   /// Specifies the number of weekdays to render, default is 7, so Monday to Sunday
   final int daysInWeek;
 
+  final bool showLabelMonth;
+
+  final String formatMonth;
+
   @override
   _WeeklyDatePickerState createState() => _WeeklyDatePickerState();
 }
@@ -81,6 +92,7 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
   late final PageController _controller;
   late final DateTime _initialSelectedDay;
   late int _weeknumberInSwipe;
+  late List<DateTime> _weekDays;
 
   @override
   void initState() {
@@ -88,6 +100,7 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
     _controller = PageController(initialPage: _weekIndexOffset);
     _initialSelectedDay = widget.selectedDay;
     _weeknumberInSwipe = widget.selectedDay.weekOfYear;
+    _weekDays = _week(0);
   }
 
   @override
@@ -98,42 +111,66 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 64,
-      color: widget.backgroundColor,
-      child: Row(
-        children: <Widget>[
-          widget.enableWeeknumberText
-              ? Container(
-                  padding: EdgeInsets.all(8.0),
-                  color: widget.weeknumberColor,
-                  child: Text(
-                    '${widget.weekdayText} $_weeknumberInSwipe',
-                    style: TextStyle(color: widget.weeknumberTextColor),
-                  ),
-                )
-              : Container(),
-          Expanded(
-            child: PageView.builder(
-              controller: _controller,
-              onPageChanged: (int index) {
-                setState(() {
-                  _weeknumberInSwipe = _initialSelectedDay
-                      .addDays(7 * (index - _weekIndexOffset))
-                      .weekOfYear;
-                });
-              },
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (_, weekIndex) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: _weekdays(weekIndex - _weekIndexOffset),
-              ),
-            ),
-          ),
+
+
+    return Column(
+      children: [
+        if(widget.showLabelMonth)...[
+          Text("${DateFormat(widget.formatMonth).format(_weekDays.first)} - ${DateFormat(widget.formatMonth).format(_weekDays.last)}")
         ],
-      ),
+        Container(
+          height: 64,
+          color: widget.backgroundColor,
+          child: Row(
+            children: <Widget>[
+              widget.enableWeeknumberText
+                  ? Container(
+                      padding: EdgeInsets.all(8.0),
+                      color: widget.weeknumberColor,
+                      child: Text(
+                        '${widget.weekdayText} $_weeknumberInSwipe',
+                        style: TextStyle(color: widget.weeknumberTextColor),
+                      ),
+                    )
+                  : Container(),
+              Expanded(
+                child: PageView.builder(
+                  controller: _controller,
+                  onPageChanged: (int index) {
+                    setState(() {
+                      _weeknumberInSwipe = _initialSelectedDay
+                          .addDays(7 * (index - _weekIndexOffset))
+                          .weekOfYear;
+                      _weekDays = _week(index - _weekIndexOffset);
+                    });
+                    widget.changeWeek?.call(_weekDays);
+                  },
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (_, weekIndex) => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: _weekdays(weekIndex - _weekIndexOffset),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
+  }
+
+  // Get a 5 day list of week
+  List<DateTime> _week(int weekIndex) {
+    List<DateTime> weekdays = [];
+
+    for (int i = 0; i < widget.daysInWeek; i++) {
+      final int offset = i + 1 - _initialSelectedDay.weekday;
+      final int daysToAdd = weekIndex * 7 + offset;
+      final DateTime dateTime = _initialSelectedDay.addDays(daysToAdd);
+      weekdays.add(dateTime);
+    }
+    return weekdays;
   }
 
   // Builds a 5 day list of DateButtons
