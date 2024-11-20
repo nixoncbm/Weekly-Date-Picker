@@ -6,27 +6,27 @@ import 'package:week_of_year/week_of_year.dart';
 import "package:weekly_date_picker/datetime_apis.dart";
 
 class WeeklyDatePicker extends StatefulWidget {
-  WeeklyDatePicker({
-    Key? key,
-    required this.selectedDay,
-    required this.changeDay,
-    this.weekdayText = 'Week',
-    this.weekdays = const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    this.backgroundColor = const Color(0xFFFAFAFA),
-    this.selectedDigitBackgroundColor = const Color(0xFF2A2859),
-    this.selectedDigitBorderColor =
-        const Color(0x00000000), // Transparent color
-    this.selectedDigitColor = const Color(0xFFFFFFFF),
-    this.digitsColor = const Color(0xFF000000),
-    this.weekdayTextColor = const Color(0xFF303030),
-    this.enableWeeknumberText = true,
-    this.weeknumberColor = const Color(0xFFB2F5FE),
-    this.weeknumberTextColor = const Color(0xFF000000),
-    this.daysInWeek = 7,
-    this.changeWeek,
-    this.showLabelMonth = false,
-    this.formatMonth = 'yyyy-MM-dd'
-  })  : assert(weekdays.length == daysInWeek,
+  WeeklyDatePicker(
+      {Key? key,
+      required this.selectedDay,
+      required this.changeDay,
+      this.weekdayText = 'Week',
+      this.weekdays = const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      this.backgroundColor = const Color(0xFFFAFAFA),
+      this.selectedDigitBackgroundColor = const Color(0xFF2A2859),
+      this.selectedDigitBorderColor =
+          const Color(0x00000000), // Transparent color
+      this.selectedDigitColor = const Color(0xFFFFFFFF),
+      this.digitsColor = const Color(0xFF000000),
+      this.weekdayTextColor = const Color(0xFF303030),
+      this.enableWeeknumberText = true,
+      this.weeknumberColor = const Color(0xFFB2F5FE),
+      this.weeknumberTextColor = const Color(0xFF000000),
+      this.daysInWeek = 7,
+      this.changeWeek,
+      this.showLabelMonth = false,
+      this.formatMonth = 'yyyy-MM-dd'})
+      : assert(weekdays.length == daysInWeek,
             "weekdays must be of length $daysInWeek"),
         super(key: key);
 
@@ -111,12 +111,37 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
 
   @override
   Widget build(BuildContext context) {
-
+    String start = DateFormat(widget.formatMonth).format(_weekDays.first);
+    String end = DateFormat(widget.formatMonth).format(_weekDays.last);
 
     return Column(
       children: [
-        if(widget.showLabelMonth)...[
-          Text("${DateFormat(widget.formatMonth).format(_weekDays.first)} - ${DateFormat(widget.formatMonth).format(_weekDays.last)}")
+        if (widget.showLabelMonth) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  "${start.replaceFirst(start[0], start[0].toUpperCase())} - ${end.replaceFirst(end[0], end[0].toUpperCase())}",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(onPressed: (){
+                _controller.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }, icon: Icon(Icons.arrow_back_ios)),
+              IconButton(onPressed: (){
+                _controller.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }, icon: Icon(Icons.arrow_forward_ios)),
+            ],
+          ),
+          SizedBox(
+            height: 20,
+          ),
         ],
         Container(
           height: 64,
